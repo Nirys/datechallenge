@@ -23,13 +23,30 @@ class DateChallenge {
     self::getInstance()->setInstanceTimezones($_tzFrom, $_tzTo);
   }
 
+ /*
+  * Get the name of timezone 1
+  */
+  public static function getTimezoneOne(){
+    return self::getInstance()->_timezoneFrom->getName();
+  }
+
+ /*
+  * Get the name of timezone 2
+  */
+  public static function getTimezoneTwo(){
+    return self::getInstance()->_timezoneTo->getName();
+  }
+
  /**
   * Retrieve (or create, if necessary) the global instance of the DateChallenge class
   * This will also initialize/re-configure the timezones on the global instance.
   */
   public static function getInstance($_tzFrom = null, $_tzTo = null){
     if(self::$_instance){
-      self::$_instance->setInstanceTimezones($_tzFrom, $_tzTo);
+      // Only set timezone data if it was explicitly passed
+      if($_tzFrom || $_tzTo){
+        self::$_instance->setInstanceTimezones($_tzFrom, $_tzTo);
+      }
       return self::$_instance;
     }
     self::$_instance = new self($_tzFrom, $_tzTo);
@@ -147,7 +164,7 @@ class DateChallenge {
   */
   protected function setInstanceTimezones($_tzFrom = null, $_tzTo = null){
     $this->_timezoneFrom = ($_tzFrom) ? new DateTimeZone($_tzFrom) : new DateTimeZone( 'GMT' );
-    $this->_timezoneTo = ($_tzTo) ? new DateTimeZone($_tzTo) : new DateTimeZone( 'GMT' );
+    $this->_timezoneTo = ($_tzTo) ? new DateTimeZone($_tzTo) : new DateTimeZone( ($_tzFrom) ? $_tzFrom : 'GMT' );
   }
 
  /**
