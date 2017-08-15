@@ -2,6 +2,8 @@
 
 class DateChallenge {
   protected static $_instance;
+  protected static $_resultFormats = ['d' ,'s', 'i', 'h', 'y'];
+
   protected $_timezoneFrom;
   protected $_timezoneTo;
 
@@ -9,7 +11,7 @@ class DateChallenge {
   * Set the timezones used for operations on the global instance.
   */
   public static function setTimezones($_tzFrom = null, $_tzTo = null){
-    self::$_instance->setTimezones($_tzFrom, $_tzTo);
+    self::getInstance()->setTimezones($_tzFrom, $_tzTo);
   }
 
  /**
@@ -42,6 +44,17 @@ class DateChallenge {
   * @return integer
   */  
   public static function daysBetween($dateFrom, $dateTo, $resultAs = 'd'){
+    $self = self::getInstance(); 
+
+    // Validates the arguments are of the expected types using local functions,
+    // throwing an exception if they aren't.
+    $self->validateArguments([
+      '$dateFrom' => ['typeExpected' => 'DateTime', 'value' => $dateFrom, 'function' => 'is_datetime_object'], 
+      '$dateTo' => ['typeExpected' => 'DateTime', 'value' => $dateTo, 'function' => 'is_datetime_object'],
+      '$resultAs' => ['typeExpected'=> 'DateChallenge Result Type', 'value' => $resultAs, 'function' => 'is_valid_datechallenge_format']
+    ]);
+
+    return 0;
   }
 
  /**
@@ -102,6 +115,31 @@ class DateChallenge {
   protected function setInstanceTimezones($_tzFrom = null, $_tzTo = null){
     $this->_timezoneFrom = ($_tzFrom) ? new DateTimeZone($_tzFrom) : new DateTimeZone( 'GMT' );
     $this->_timezoneTo = ($_tzTo) ? new DateTimeZone($_tzTo) : new DateTimeZone( 'GMT' );
+  }
+
+ /**
+  * Helper method to validate that a given parameter is a DateTime object.
+  */
+  protected function is_datetime_object($var){
+    return gettype($var)=='object' && get_class($var) == 'DateTime';
+  }
+
+ /**
+  * Helper method to validate the a given parameter is a valid result format string
+  */
+  protected function is_valid_datechallenge_format($var){
+    return in_array($var, self::$_resultFormats);
+  }
+
+ /**
+  * Helper method to bulk validate arguments using internal functions
+  */
+  protected function validateArguments($argData){
+    foreach($argData as $argName => $argData){
+      if(! $this->{$argData['function']}($argData['value']) ){
+        throw new Exception("$argName expected a value of type {$argData['typeExpected']}");
+      }
+    }
   }
 
 }
