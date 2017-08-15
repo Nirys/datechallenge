@@ -12,12 +12,16 @@
   <?php
   require_once "DateChallenge.php";
 
-  $Date1 = new DateTime("2017-08-1");
-  $Date2 = new DateTime("2017-08-30");
 
-  $Days = DateChallenge::daysBetween($Date1, $Date2);
+  $Date1 = new DateTime("2017-01-4 10:00:00");
+  $Date2 = new DateTime("2017-08-7 11:00:00");
 
-  echo "There are $Days between";
+  DateChallenge::setTimezones('Australia/Adelaide','Australia/Perth');
+
+  $Days = DateChallenge::daysBetween($Date1, $Date2, 's');
+  $WeekDays = DateChallenge::weekdaysBetween($Date1, $Date2);
+  $Weeks = DateChallenge::weeksBetween($Date1, $Date2);
+  echo "There are $Days between and $WeekDays weekdays and $Weeks weeks between";
   ?>
  </body>
 </html>

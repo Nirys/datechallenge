@@ -2,8 +2,17 @@
 
 class DateChallenge {
   protected static $_instance;
-  protected static $_resultFormats = ['d' ,'s', 'i', 'h', 'y'];
+  protected static $_resultFormats = [
+    'd' => '$i / 60 / 60 / 24',
+    's' => '$i',
+    'i' => '$i / 60',
+    'h' => '$i / 60 / 60',
+    'y' => '$i / 60 / 60 / 24 / 365',
+    'w' => '$i / 60 / 60 / 24 / 7'
+  ];
+  protected static $_weekdays = [1,2,3,4,5];
 
+  protected $_resultFormatNames; // This will be populated in the constructor
   protected $_timezoneFrom;
   protected $_timezoneTo;
 
@@ -11,7 +20,7 @@ class DateChallenge {
   * Set the timezones used for operations on the global instance.
   */
   public static function setTimezones($_tzFrom = null, $_tzTo = null){
-    self::getInstance()->setTimezones($_tzFrom, $_tzTo);
+    self::getInstance()->setInstanceTimezones($_tzFrom, $_tzTo);
   }
 
  /**
@@ -45,16 +54,7 @@ class DateChallenge {
   */  
   public static function daysBetween($dateFrom, $dateTo, $resultAs = 'd'){
     $self = self::getInstance(); 
-
-    // Validates the arguments are of the expected types using local functions,
-    // throwing an exception if they aren't.
-    $self->validateArguments([
-      '$dateFrom' => ['typeExpected' => 'DateTime', 'value' => $dateFrom, 'function' => 'is_datetime_object'], 
-      '$dateTo' => ['typeExpected' => 'DateTime', 'value' => $dateTo, 'function' => 'is_datetime_object'],
-      '$resultAs' => ['typeExpected'=> 'DateChallenge Result Type', 'value' => $resultAs, 'function' => 'is_valid_datechallenge_format']
-    ]);
-
-    return 0;
+    return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs);
   }
 
  /**
@@ -74,6 +74,8 @@ class DateChallenge {
   * @return integer
   */  
   public static function weekdaysBetween($dateFrom, $dateTo, $resultAs = 'd'){
+    $self = self::getInstance(); 
+    return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs, true);
   }
 
  /**
@@ -93,6 +95,8 @@ class DateChallenge {
   * @return integer
   */  
   public static function weeksBetween($dateFrom, $dateTo, $resultAs = 'w'){
+    $self = self::getInstance(); 
+    return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs);
   }
 
  /**
@@ -106,7 +110,36 @@ class DateChallenge {
   * @return integer
   */  
   public function __construct($_tzFrom = null, $_tzTo = null){
+    $this->_resultFormatNames = array_keys(self::$_resultFormats);
+
     $this->setInstanceTimezones($_tzFrom, $_tzTo);
+  }
+ /**
+  *
+  */
+  protected function abstractTimeBetween($dateFrom, $dateTo, $resultAs = 'd', $weekdaysOnly = false){
+    $this->validateArguments([
+      '$dateFrom' => ['typeExpected' => 'DateTime', 'value' => $dateFrom, 'function' => 'is_datetime_object'], 
+      '$dateTo' => ['typeExpected' => 'DateTime', 'value' => $dateTo, 'function' => 'is_datetime_object'],
+      '$resultAs' => ['typeExpected'=> 'DateChallenge Result Type', 'value' => $resultAs, 'function' => 'is_valid_datechallenge_format']
+    ]);
+
+    $dateFrom->setTimezone($this->_timezoneFrom);
+    $dateTo->setTimezone($this->_timezoneTo);
+
+    // Iterating over the hours in a timespan is potentially ridiculously costly if using
+    // long timespan intervals, and should probably be done better for that use case.
+    // I decided to stick with it here for as a trade off of interval accuracy vs speed
+    // (instead of using PT1S which was HORRIBLY costly) but I'd probably revise it if large
+    // time intervals were expected.  
+    $interval = new DateInterval('PT1H');  
+    $period = new DatePeriod($dateFrom, $interval, $dateTo);
+    $seconds = 0;
+    foreach($period as $date){
+      if(!$weekdaysOnly || in_array($date->format('N'), self::$_weekdays) ) $seconds+= 60 * 60;
+    }
+
+    return $this->formatDifference($seconds, $resultAs);
   }
 
  /**
@@ -128,7 +161,7 @@ class DateChallenge {
   * Helper method to validate the a given parameter is a valid result format string
   */
   protected function is_valid_datechallenge_format($var){
-    return in_array($var, self::$_resultFormats);
+    return in_array($var, $this->_resultFormatNames);
   }
 
  /**
@@ -140,6 +173,17 @@ class DateChallenge {
         throw new Exception("$argName expected a value of type {$argData['typeExpected']}");
       }
     }
+  }
+
+  /**
+  * Format the time value (given as seconds) as one of our accepted formats
+  */
+  protected function formatDifference($diffValue, $format){
+    // Calculate the value of this DateInterval as a total number of seconds
+    $calculation = str_replace('$i', $diffValue, self::$_resultFormats[$format]);
+    eval('$diff = floor(' . $calculation .');');
+
+    return $diff;
   }
 
 }
