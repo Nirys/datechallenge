@@ -3,18 +3,30 @@
 class DateChallenge {
   protected static $_instance;
   protected static $_resultFormats = [
-    'd' => '$i / 60 / 60 / 24',
-    's' => '$i',
-    'i' => '$i / 60',
-    'h' => '$i / 60 / 60',
-    'y' => '$i / 60 / 60 / 24 / 365',
-    'w' => '$i / 60 / 60 / 24 / 7'
+    'd' => ['calculate' => '$i / 60 / 60 / 24', 'description' => 'Days'],
+    's' => ['calculate' => '$i', 'description' => 'Seconds'],
+    'i' => ['calculate' => '$i / 60', 'description' => 'Minutes'],
+    'h' => ['calculate' => '$i / 60 / 60', 'description' => 'Hours'],
+    'y' => ['calculate' => '$i / 60 / 60 / 24 / 365', 'description' => 'Years'],
+    'w' => ['calculate' => '$i / 60 / 60 / 24 / 7', 'description' => 'Weeks'],
   ];
   protected static $_weekdays = [1,2,3,4,5];
 
   protected $_resultFormatNames; // This will be populated in the constructor
   protected $_timezoneFrom;
   protected $_timezoneTo;
+
+ /**
+  * Retrieve an associative array of name/description pairs for 
+  * available formats
+  */
+  public static function listFormats(){
+    $list = array();
+    foreach(self::$_resultFormats as $key => $item){
+      $list[$key] = $item['description'];
+    }
+    return $list;
+  }
 
  /**
   * Set the timezones used for operations on the global instance.

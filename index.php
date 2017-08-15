@@ -2,6 +2,7 @@
   require_once "DateChallenge.php";
 
   $tzList = DateTimeZone::listIdentifiers(DateTimeZone::ALL);
+  $formatList = DateChallenge::listFormats();
 
   $dateFrom = isset($_POST['dateFrom']) ? $_POST['dateFrom'] : '';
   $dateTo = isset($_POST['dateTo']) ? $_POST['dateTo'] : '';
@@ -9,22 +10,29 @@
   if(isset($_POST['action'])){
     $Date1 = strtotime($dateFrom);
     $Date2 = strtotime($dateTo);
-    $TZ1 = $_POST['tzFrom'];
-    $TZ2 = $_POST['tzTo'];
+    $TZ1 = $_POST['fromTZ'];
+    $TZ2 = $_POST['toTZ'];
 
 //    $DaysBetween = DateChallenge::days    
   }
 
-  function printTimezoneSelector($name, $selectedValue = null){
-    global $tzList;
+  function printFormatSelector($name, $default = 'd'){
+    global $formatList;
+    printGenericSelector($name, $formatList, $default);
+  }
 
-    if($selectedValue == null){
-      $selectedValue = isset($_POST[$name]) ? $_POST[$name] : 'UTC';
-    }
+  function printTimezoneSelector($name){
+    global $tzList;
+    printGenericSelector($name, $tzList, 'UTC', false);
+  }
+
+  function printGenericSelector($name, $fromList, $default = null, $assocArray = true){
+    $selectedValue = isset($_POST[$name]) ? $_POST[$name] : $default;
     ?>
     <select name="<?php echo $name; ?>"><?php
-    foreach($tzList as $item){
-      echo "<option value=\"$item\" " . ($item==$selectedValue ? 'selected' : '') . ">$item</option>";
+    foreach($fromList as $key=>$item){
+      $value = ($assocArray ? $key : $item);
+      echo "<option value=\"" . $value . "\" " . ($value==$selectedValue ? 'selected' : '') . ">$item</option>";
     }
     ?></select>
     <?php
@@ -85,6 +93,21 @@
     <div class="input-group">
       <label for="dateTo">Date To</label>
       <span class="form-input"><input class="datetime" type="text" name="dateTo" value="<?php echo $dateTo; ?>"></span>
+    </div>
+
+    <div class="input-group">
+      <label for="dateTo">Format 'daysBetween' results as</label>
+      <span class="form-input"><?php printFormatSelector("daysResults", 'd');?></span>
+    </div>
+
+    <div class="input-group">
+      <label for="dateTo">Format 'weekdaysBetween' results as</label>
+      <span class="form-input"><?php printFormatSelector("daysResults", 'd');?></span>
+    </div>
+
+    <div class="input-group">
+      <label for="dateTo">Format 'weeksBetween' results as</label>
+      <span class="form-input"><?php printFormatSelector("daysResults", 'w');?></span>
     </div>
 
     <input type="submit" value="Calculate Results">
