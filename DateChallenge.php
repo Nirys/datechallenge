@@ -6,22 +6,10 @@ class DateChallenge {
   protected $_timezoneTo;
 
  /**
-  * Constructor.  Generally I assume people won't create an instance of DateChallenge
-  * themselves, but will use the static methods which access $_instance.
-  *
-  * @param string $_tzFrom A valid PHP timezone descriptor string for all "from" dates, or null/ommitted to use GMT.
-  * @param string $_tzTo A valid PHP timezone descriptor string for all "to" dates.  
-  * If $_tzFrom is specified but $_tzTo is not, then $_tzFrom is assumed for $_tzTo.  If neither argument is specified, GMT is used.
-  *
-  * @return integer
-  */  
-  public function __construct($_tzFrom = null, $_tzTo = null){
-    $this->setTimezones($_tzFrom, $_tzTo);
-  }
-
-  protected function setTimezones($_tzFrom = null, $_tzTo = null){
-    $this->_timezoneFrom = ($_tzFrom) ? new DateTimeZone($_tzFrom) : new DateTimeZone( 'GMT' );
-    $this->_timezoneTo = ($_tzTo) ? new DateTimeZone($_tzTo) : new DateTimeZone( 'GMT' );
+  * Set the timezones used for operations on the global instance.
+  */
+  public static function setTimezones($_tzFrom = null, $_tzTo = null){
+    self::$_instance->setTimezones($_tzFrom, $_tzTo);
   }
 
  /**
@@ -30,14 +18,11 @@ class DateChallenge {
   */
   public static function getInstance($_tzFrom = null, $_tzTo = null){
     if(self::$_instance){
-      self::$_instance->setTimezones($_tzFrom, $_tzTo);
+      self::$_instance->setInstanceTimezones($_tzFrom, $_tzTo);
       return self::$_instance;
     }
     self::$_instance = new self($_tzFrom, $_tzTo);
     return self::$_instance;
-  }
-
-  public function setTimezone($_tzFrom, $_tzTo = null){
   }
 
  /**
@@ -95,6 +80,28 @@ class DateChallenge {
   * @return integer
   */  
   public static function weeksBetween($dateFrom, $dateTo, $resultAs = 'w'){
+  }
+
+ /**
+  * Constructor.  Generally I assume people won't create an instance of DateChallenge
+  * themselves, but will use the static methods which access $_instance.
+  *
+  * @param string $_tzFrom A valid PHP timezone descriptor string for all "from" dates, or null/ommitted to use GMT.
+  * @param string $_tzTo A valid PHP timezone descriptor string for all "to" dates.  
+  * If $_tzFrom is specified but $_tzTo is not, then $_tzFrom is assumed for $_tzTo.  If neither argument is specified, GMT is used.
+  *
+  * @return integer
+  */  
+  public function __construct($_tzFrom = null, $_tzTo = null){
+    $this->setInstanceTimezones($_tzFrom, $_tzTo);
+  }
+
+ /**
+  * Set the timezones used for operations.
+  */
+  protected function setInstanceTimezones($_tzFrom = null, $_tzTo = null){
+    $this->_timezoneFrom = ($_tzFrom) ? new DateTimeZone($_tzFrom) : new DateTimeZone( 'GMT' );
+    $this->_timezoneTo = ($_tzTo) ? new DateTimeZone($_tzTo) : new DateTimeZone( 'GMT' );
   }
 
 }

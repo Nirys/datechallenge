@@ -12,7 +12,12 @@
   <?php
   require_once "DateChallenge.php";
 
-  
+  $Date1 = new DateTime("2017-08-1");
+  $Date2 = new DateTime("2017-08-30");
+
+  $Days = DateChallenge::daysBetween($Date1, $Date2);
+
+  echo "There are $Days between";
   ?>
  </body>
 </html>
