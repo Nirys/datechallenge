@@ -146,29 +146,66 @@ class DateChallenge {
  /**
   *
   */
-  protected function abstractTimeBetween($dateFrom, $dateTo, $resultAs = 'd', $weekdaysOnly = false){
+  protected function abstractTimeBetween($dateFrom, $dateTo, $resultAs = 'd', $weekdaysOnly = false, $inclusive = false){
+    // Decided that the previous iteration method wasn't accurate enough and we really did need to count
+    // seconds.  However, in the mid range we can just iterate by day because we know they are
+    // whole days.
+
     $this->validateArguments([
       '$dateFrom' => ['typeExpected' => 'DateTime', 'value' => $dateFrom, 'function' => 'is_datetime_object'], 
       '$dateTo' => ['typeExpected' => 'DateTime', 'value' => $dateTo, 'function' => 'is_datetime_object'],
       '$resultAs' => ['typeExpected'=> 'DateChallenge Result Type', 'value' => $resultAs, 'function' => 'is_valid_datechallenge_format']
     ]);
 
-    $dateFrom->setTimezone($this->_timezoneFrom);
-    $dateTo->setTimezone($this->_timezoneTo);
+//    if($dateFrom->getTimezone()->getName() != $this->_timezoneFrom->getName()){
+//      $dateFrom->setTimezone($this->_timezoneFrom);
+//    }
 
-    // Iterating over the hours in a timespan is potentially ridiculously costly if using
-    // long timespan intervals, and should probably be done better for that use case.
-    // I decided to stick with it here for as a trade off of interval accuracy vs speed
-    // (instead of using PT1S which was HORRIBLY costly) but I'd probably revise it if large
-    // time intervals were expected.  
-    $interval = new DateInterval('PT1H');  
-    $period = new DatePeriod($dateFrom, $interval, $dateTo);
-    $seconds = 0;
-    foreach($period as $date){
-      if(!$weekdaysOnly || in_array($date->format('N'), self::$_weekdays) ) $seconds+= 60 * 60;
+//    if($dateTo->getTimezone()->getName() != $this->_timezoneTo->getName()){
+//      $dateTo->setTimezone($this->_timezoneTo);
+//    }
+
+    if(date('Y-m-d', $dateFrom->getTimestamp()) == date('Y-m-d', $dateTo->getTimestamp())){
+      // Everything is on the same day...how many seconds?
+      $diff = ($dateTo->getTimestamp() - $dateFrom->getTimestamp());
+      if($inclusive) $diff += 1;
+
+      // If we're counting weekdays, does it even matter?
+      if($weekdaysOnly && !in_array(date('N', $dateTo->getTimestamp()), self::$_weekdays)) $diff = 0;
+    }else{ 
+      $dateFromBoundary = new DateTime($this->formatDate('Y-m-d 23:59:59', $dateFrom));
+      $dateToBoundary = new DateTime($this->formatDate('Y-m-d 00:00:00', $dateTo));
+
+      $midRangeStart = new DateTime($this->formatDate('Y-m-d 00:00:00', $dateFrom));
+      $midRangeStart->modify('+1 day');
+
+      $midRangeEnd = new DateTime($this->formatDate('Y-m-d 23:59:59', $dateToBoundary));
+      $midRangeEnd->modify('-1 day');
+
+      if($midRangeEnd->getTimestamp() - $dateTo->getTimestamp() <= 0){
+        // We're only accross < 48 hours, no iterative lifting needed!
+        $diffOne = $this->abstractTimeBetween($dateFrom, $dateFromBoundary, 's', $weekdaysOnly, true);
+        $diffTwo = $this->abstractTimebetween($midRangeStart, $dateTo, 's', $weekdaysOnly, false);
+        $diff = $diffOne + $diffTwo;
+      }else{
+        $diffStart = $this->abstractTimebetween($dateFrom, $dateFromBoundary, 's', $weekdaysOnly, true);
+
+        echo "Go between " . $this->formatDate('Y-m-d H:i:s', $dateToBoundary) . ' to ' . $this->formatDate('Y-m-d H:i:s', $dateTo) . "<br>\n";
+        $diffEnd = $this->abstractTimebetween($dateToBoundary, $dateTo, 's', $weekdaysOnly);
+
+        $interval = new DateInterval('P1D');  
+        $period = new DatePeriod($midRangeStart, $interval, $dateToBoundary);
+        $diffMid = 0;
+        foreach($period as $date){
+          if(!$weekdaysOnly || in_array(date('N', $date->getTimestamp()), self::$_weekdays) )
+            $diffMid += 60 * 60 * 24;
+        }
+
+        $diff = $diffStart + $diffMid + $diffEnd ;
+      }
     }
-
-    return $this->formatDifference($seconds, $resultAs);
+    
+    return (int) $this->formatDifference($diff, $resultAs);
   }
 
  /**
@@ -209,10 +246,16 @@ class DateChallenge {
   */
   protected function formatDifference($diffValue, $format){
     // Calculate the value of this DateInterval as a total number of seconds
-    $calculation = str_replace('$i', $diffValue, self::$_resultFormats[$format]);
+    $calculation = str_replace('$i', $diffValue, self::$_resultFormats[$format]['calculate']);
     eval('$diff = floor(' . $calculation .');');
 
     return $diff;
   }
 
+  /**
+  *
+  */
+  protected function formatDate($str, $dateTime){
+    return date($str, $dateTime->getTimestamp());
+  }
 }

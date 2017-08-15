@@ -1,6 +1,10 @@
 <?php
   require_once "DateChallenge.php";
 
+  echo DateChallenge::weekdaysBetween(new DateTime('2018-01-02 10:00:00'), new DateTime('2018-01-06 10:00:00'),'s');
+  die;
+
+
   $tzList = DateTimeZone::listIdentifiers(DateTimeZone::ALL);
   $formatList = DateChallenge::listFormats();
 
@@ -13,7 +17,6 @@
     $TZ1 = $_POST['fromTZ'];
     $TZ2 = $_POST['toTZ'];
 
-//    $DaysBetween = DateChallenge::days    
   }
 
   function printFormatSelector($name, $default = 'd'){

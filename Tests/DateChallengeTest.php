@@ -35,7 +35,22 @@ class DateChallengeTest extends TestCase{
     }
 
     public function testCanCalculateValidDaysBetween(){
-      $this->assertEquals('1', DateChallenge::daysBetween(new DateTime('2018-01-01'), new DateTime('2018-01-02')) );
+      DateChallenge::setTimezones('Australia/Adelaide','Australia/Adelaide');
+      $this->assertEquals('1', DateChallenge::daysBetween(new DateTime('2018-01-01 00:00:00'), new DateTime('2018-01-02 00:00:00')) );
+    }
+
+    public function testCanCalculateValidDaysBetweenLargerRange(){
+      $this->assertEquals('4', DateChallenge::daysBetween(new DateTime('2018-01-01 10:00:00'), new DateTime('2018-01-05 10:00:00')) );
+    }
+
+    public function testCanCalculateValidWeekDaysBetweenLargerRange(){
+      DateChallenge::setTimezones('Australia/Adelaide');
+      $this->assertEquals('3', DateChallenge::weekdaysBetween(new DateTime('2018-01-01 10:00:00'), new DateTime('2018-01-05 10:00:00')) );
+    }
+
+    public function testCanCalculateMicroRange(){
+      DateChallenge::setTimezones('Australia/Adelaide');
+      $this->assertEquals('30', DateChallenge::daysBetween(new DateTime('2018-01-01 10:00:00'), new DateTime('2018-01-01 10:00:30'), 's') );
     }
 
     public function testCannotUseInvalidDateArguments(){
