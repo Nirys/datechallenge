@@ -132,6 +132,8 @@ class DateChallenge {
     $this->setInstanceTimezones($_tzFrom, $_tzTo);
   }
 
+
+
  /**
   *
   */
@@ -151,7 +153,8 @@ class DateChallenge {
       if($inclusive) $diff++;
 
       // If we're counting weekdays, does it even matter?
-      if($weekdaysOnly && !in_array(date('N', $dateTo->getTimestamp()), self::$_weekdays)) $diff = 0;
+      if($weekdaysOnly && !in_array(date('N', $dateTo->getTimestamp()), self::$_weekdays))
+        $diff = 0;
     }else{ 
       $dateFromBoundary = new DateTime($this->formatDate('Y-m-d 23:59:59', $dateFrom));
       $dateToBoundary = new DateTime($this->formatDate('Y-m-d 00:00:00', $dateTo));
@@ -173,8 +176,9 @@ class DateChallenge {
         $period = new DatePeriod($midRangeStart, $interval, $midRangeEnd);
         $diffMid = 0;
         foreach($period as $date){
-          if(!$weekdaysOnly || in_array(date('N', $date->getTimestamp()), self::$_weekdays) )
+          if(!$weekdaysOnly || in_array(date('N', $date->getTimestamp()), self::$_weekdays) ){
             $diffMid += 60 * 60 * 24;
+          }
         }
         $diff = $diffStart + $diffMid + $diffEnd ;
       }

@@ -45,7 +45,7 @@ class DateChallengeTest extends TestCase{
 
     public function testCanCalculateValidWeekDaysBetweenLargerRange(){
       DateChallenge::setTimezones('Australia/Adelaide');
-      $this->assertEquals('3', DateChallenge::weekdaysBetween(new DateTime('2018-01-01 10:00:00'), new DateTime('2018-01-05 10:00:00')) );
+      $this->assertEquals('3', DateChallenge::weekdaysBetween(new DateTime('2017-08-01 10:00:00'), new DateTime('2017-08-05 10:00:00')) );
     }
 
     public function testCanCalculateMicroRange(){
