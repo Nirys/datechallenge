@@ -1,45 +1,9 @@
 <?php
-  require_once "DateChallenge.php";
+  require_once "DateChallengeFrontend.php";
 
-  echo DateChallenge::weekdaysBetween(new DateTime('2018-01-02 10:00:00'), new DateTime('2018-01-06 10:00:00'),'s');
-  die;
+  $FrontendHandler = new DateChallengeFrontend();
 
-
-  $tzList = DateTimeZone::listIdentifiers(DateTimeZone::ALL);
-  $formatList = DateChallenge::listFormats();
-
-  $dateFrom = isset($_POST['dateFrom']) ? $_POST['dateFrom'] : '';
-  $dateTo = isset($_POST['dateTo']) ? $_POST['dateTo'] : '';
-
-  if(isset($_POST['action'])){
-    $Date1 = strtotime($dateFrom);
-    $Date2 = strtotime($dateTo);
-    $TZ1 = $_POST['fromTZ'];
-    $TZ2 = $_POST['toTZ'];
-
-  }
-
-  function printFormatSelector($name, $default = 'd'){
-    global $formatList;
-    printGenericSelector($name, $formatList, $default);
-  }
-
-  function printTimezoneSelector($name){
-    global $tzList;
-    printGenericSelector($name, $tzList, 'UTC', false);
-  }
-
-  function printGenericSelector($name, $fromList, $default = null, $assocArray = true){
-    $selectedValue = isset($_POST[$name]) ? $_POST[$name] : $default;
-    ?>
-    <select name="<?php echo $name; ?>"><?php
-    foreach($fromList as $key=>$item){
-      $value = ($assocArray ? $key : $item);
-      echo "<option value=\"" . $value . "\" " . ($value==$selectedValue ? 'selected' : '') . ">$item</option>";
-    }
-    ?></select>
-    <?php
-  }
+  $Result = ($FrontendHandler->getPOSTValue('action') == 'run') ? $FrontendHandler->run() : null;
 ?>
 <!doctype html>
 <html lang="en">
@@ -65,6 +29,26 @@
     margin-top: 5px;
     margin-bottom: 5px;
   }
+
+  .generic-message {
+   margin-bottom: 1em;
+   padding: 5px;
+  }
+
+  .results {
+    border: 2px solid green;
+    background-color: #dfffcb;
+  }
+
+  .errors {
+    border: 2px solid red;
+    background-color: #ffcbcb;
+  }
+
+  .warning {
+   border: 2px solid #c50;
+   background-color: orange;
+  }
   </style>
   <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
   <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.full.js"></script>
@@ -77,40 +61,47 @@
  </head>
  <body>
    <h1>Use the DateChallenge Class</h1>
+   <div class="generic-message warning">
+   <b>Please Note</b>:<br>
+   This page is provided as a friendly UI for testing the DateChallenge class.  Minimal user input validation is done and this code should not be run on a public facing web server.
+   </div>
+   <?php
+   if($Result) $Result->output();
+   ?>
   <form method="post">
     <div class="input-group">
       <label for="fromTZ">Timezone for From date</label>
-      <span class="form-input"><?php printTimezoneSelector("fromTZ"); ?></span>
+      <span class="form-input"><?php $FrontendHandler->printTimezoneSelector("fromTZ"); ?></span>
     </div>
 
     <div class="input-group">
       <label for="toTZ">Timezone for To date</label>
-      <span class="form-input"><?php printTimezoneSelector("toTZ"); ?></span>
+      <span class="form-input"><?php $FrontendHandler->printTimezoneSelector("toTZ"); ?></span>
     </div>
 
     <div class="input-group">
       <label for="dateFrom">Date From</label>
-      <span class="form-input"><input class="datetime" type="text" name="dateFrom" value="<?php echo $dateFrom; ?>"></span>
+      <span class="form-input"><?php $FrontendHandler->printInput("dateFrom", "text", "datetime"); ?></span>
     </div>
 
     <div class="input-group">
       <label for="dateTo">Date To</label>
-      <span class="form-input"><input class="datetime" type="text" name="dateTo" value="<?php echo $dateTo; ?>"></span>
+      <span class="form-input"><?php $FrontendHandler->printInput("dateTo", "text", "datetime"); ?></span>
     </div>
 
     <div class="input-group">
       <label for="dateTo">Format 'daysBetween' results as</label>
-      <span class="form-input"><?php printFormatSelector("daysResults", 'd');?></span>
+      <span class="form-input"><?php $FrontendHandler->printFormatSelector("daysResults", 'd');?></span>
     </div>
 
     <div class="input-group">
       <label for="dateTo">Format 'weekdaysBetween' results as</label>
-      <span class="form-input"><?php printFormatSelector("daysResults", 'd');?></span>
+      <span class="form-input"><?php $FrontendHandler->printFormatSelector("weekdaysResults", 'd');?></span>
     </div>
 
     <div class="input-group">
       <label for="dateTo">Format 'weeksBetween' results as</label>
-      <span class="form-input"><?php printFormatSelector("daysResults", 'w');?></span>
+      <span class="form-input"><?php $FrontendHandler->printFormatSelector("weeksResults", 'w');?></span>
     </div>
 
     <input type="submit" value="Calculate Results">

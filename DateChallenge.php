@@ -117,8 +117,9 @@ class DateChallenge {
     $self = self::getInstance(); 
     return $self->abstractTimeBetweenWrapper($dateFrom, $dateTo, $resultAs);
   }
+
  /**
-  * Constructor.  Generally I assume people won't create an instance of DateChallenge
+  * Constructor.  Generally I've assumed people won't create an instance of DateChallenge
   * themselves, but will use the static methods which access $_instance.
   *
   * @param string $_tzFrom A valid PHP timezone descriptor string for all "from" dates, or null/ommitted to use GMT.
@@ -132,6 +133,11 @@ class DateChallenge {
     $this->setInstanceTimezones($_tzFrom, $_tzTo);
   }
 
+ /**
+  * This is a wrapper function for abstractTimeBetween, which assumes $dateFrom and $dateTo
+  * are given in the previously specified timezones and converts them to UTC before handing
+  * off to abstractTimeBetween.
+  */
   protected function abstractTimeBetweenWrapper($dateFrom, $dateTo, $resultAs = 'd', $weekdaysOnly = false){
     $this->validateArguments([
       '$dateFrom' => ['typeExpected' => 'DateTime', 'value' => $dateFrom, 'function' => 'is_datetime_object'], 
@@ -144,12 +150,17 @@ class DateChallenge {
 
     $UTCDateTo = new DateTime($dateTo->format('Y-m-d H:i:s'), $this->_timezoneTo);
     $UTCDateTo->setTimezone(new DateTimeZone('UTC'));
-    
-    return $this->abstractTimeBetween($UTCDateFrom, $UTCDateTo, $resultAs, $weekdaysOnly);
+
+    if($UTCDateFrom->getTimestamp() > $UTCDateTo->getTimestamp()){
+      return ($this->abstractTimeBetween($UTCDateTo, $UTCDateFrom, $resultAs, $weekdaysOnly) * -1);
+    }else{    
+      return $this->abstractTimeBetween($UTCDateFrom, $UTCDateTo, $resultAs, $weekdaysOnly);
+    }
   }
 
  /**
-  *
+  * This function primarily does the heavy lifting of sorting out the time periods to calculate,
+  * however it assumes that $dateFrom and $dateTo are in UTC.
   */
   protected function abstractTimeBetween($dateFrom, $dateTo, $resultAs = 'd', $weekdaysOnly = false, $inclusive = false){
     // Decided that the previous iteration method wasn't accurate enough and we really did need to count
@@ -170,11 +181,11 @@ class DateChallenge {
       if($weekdaysOnly && !in_array(date('N', $dateTo->getTimestamp()), self::$_weekdays))
         $diff = 0;
     }else{ 
-      $dateFromBoundary = new DateTime($this->formatDate('Y-m-d 23:59:59', $dateFrom));
-      $dateToBoundary = new DateTime($this->formatDate('Y-m-d 00:00:00', $dateTo));
-      $midRangeStart = new DateTime($this->formatDate('Y-m-d 00:00:00', $dateFrom));
+      $dateFromBoundary = new DateTime($dateFrom->format('Y-m-d 23:59:59'));
+      $dateToBoundary = new DateTime($dateTo->format('Y-m-d 00:00:00'));
+      $midRangeStart = new DateTime($dateFrom->format('Y-m-d 00:00:00'));
       $midRangeStart->modify('+1 day');
-      $midRangeEnd = new DateTime($this->formatDate('Y-m-d 23:59:59', $dateToBoundary));
+      $midRangeEnd = new DateTime($dateToBoundary->format('Y-m-d 23:59:59'));
       $midRangeEnd->modify('-1 day');
 
       if( $midRangeEnd->getTimestamp() - $midRangeStart->getTimestamp() <= 0){
@@ -238,18 +249,15 @@ class DateChallenge {
     eval('$diff = floor(' . $calculation .');');
     return $diff;
   }
-  /**
-  *
-  */
-  protected function formatDate($str, $dateTime){
-    return date($str, $dateTime->getTimestamp());
-  }
 
+  /**
+  * Calculate the total number of seconds represented by this DateInterval object
+  * NOTE:  This only works for DateIntervals that represent a period less than 24 hours.
+  */
   protected function dateIntervalSeconds($dateInterval){
     $hourSeconds = $dateInterval->h * 60 * 60;
     $minuteSeconds = $dateInterval->i * 60;
 
-    return $dateInterval->s + $minuteSeconds + $hourSeconds;
-    
+    return $dateInterval->s + $minuteSeconds + $hourSeconds;    
   }
 }
