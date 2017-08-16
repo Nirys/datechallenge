@@ -15,7 +15,7 @@ class DateChallengeResult {
   protected $weeksResultsFmt;
   protected $daysResultsFmt;
   protected $weekdaysResultsFmt;
-  protected $resultLine = '<span class=\"method-name\">%s</span> returned %s as a value of %s<br>';
+  protected $resultLine = '<span class="method-name">%s</span> returned %s as a value of %s<br>';
 
   public function __construct($dcFrontend){
     $this->errors = array();

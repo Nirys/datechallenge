@@ -49,6 +49,10 @@
    border: 2px solid #c50;
    background-color: orange;
   }
+
+  .method-name {
+  font-style: italic;
+  }
   </style>
   <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
   <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.full.js"></script>
