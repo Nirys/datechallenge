@@ -1,5 +1,4 @@
 <?php
-
 class DateChallenge {
   protected static $_instance;
   protected static $_resultFormats = [
@@ -11,11 +10,9 @@ class DateChallenge {
     'w' => ['calculate' => '$i / 60 / 60 / 24 / 7', 'description' => 'Weeks'],
   ];
   protected static $_weekdays = [1,2,3,4,5];
-
   protected $_resultFormatNames; // This will be populated in the constructor
   protected $_timezoneFrom;
   protected $_timezoneTo;
-
  /**
   * Retrieve an associative array of name/description pairs for 
   * available formats
@@ -27,28 +24,24 @@ class DateChallenge {
     }
     return $list;
   }
-
  /**
   * Set the timezones used for operations on the global instance.
   */
   public static function setTimezones($_tzFrom = null, $_tzTo = null){
     self::getInstance()->setInstanceTimezones($_tzFrom, $_tzTo);
   }
-
  /*
   * Get the name of timezone 1
   */
   public static function getTimezoneOne(){
     return self::getInstance()->_timezoneFrom->getName();
   }
-
  /*
   * Get the name of timezone 2
   */
   public static function getTimezoneTwo(){
     return self::getInstance()->_timezoneTo->getName();
   }
-
  /**
   * Retrieve (or create, if necessary) the global instance of the DateChallenge class
   * This will also initialize/re-configure the timezones on the global instance.
@@ -64,7 +57,6 @@ class DateChallenge {
     self::$_instance = new self($_tzFrom, $_tzTo);
     return self::$_instance;
   }
-
  /**
   * Calculates the whole days between $dateFrom and $dateTo
   *
@@ -85,7 +77,6 @@ class DateChallenge {
     $self = self::getInstance(); 
     return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs);
   }
-
  /**
   * Calculates the number of business days (Mon - Fri) between $dateFrom and $dateTo
   *
@@ -106,7 +97,6 @@ class DateChallenge {
     $self = self::getInstance(); 
     return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs, true);
   }
-
  /**
   * Calculates the number of whole weeks between $dateFrom and $dateTo
   *
@@ -127,7 +117,6 @@ class DateChallenge {
     $self = self::getInstance(); 
     return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs);
   }
-
  /**
   * Constructor.  Generally I assume people won't create an instance of DateChallenge
   * themselves, but will use the static methods which access $_instance.
@@ -140,9 +129,9 @@ class DateChallenge {
   */  
   public function __construct($_tzFrom = null, $_tzTo = null){
     $this->_resultFormatNames = array_keys(self::$_resultFormats);
-
     $this->setInstanceTimezones($_tzFrom, $_tzTo);
   }
+
  /**
   *
   */
@@ -150,64 +139,49 @@ class DateChallenge {
     // Decided that the previous iteration method wasn't accurate enough and we really did need to count
     // seconds.  However, in the mid range we can just iterate by day because we know they are
     // whole days.
-
     $this->validateArguments([
       '$dateFrom' => ['typeExpected' => 'DateTime', 'value' => $dateFrom, 'function' => 'is_datetime_object'], 
       '$dateTo' => ['typeExpected' => 'DateTime', 'value' => $dateTo, 'function' => 'is_datetime_object'],
       '$resultAs' => ['typeExpected'=> 'DateChallenge Result Type', 'value' => $resultAs, 'function' => 'is_valid_datechallenge_format']
     ]);
 
-//    if($dateFrom->getTimezone()->getName() != $this->_timezoneFrom->getName()){
-//      $dateFrom->setTimezone($this->_timezoneFrom);
-//    }
-
-//    if($dateTo->getTimezone()->getName() != $this->_timezoneTo->getName()){
-//      $dateTo->setTimezone($this->_timezoneTo);
-//    }
-
     if(date('Y-m-d', $dateFrom->getTimestamp()) == date('Y-m-d', $dateTo->getTimestamp())){
       // Everything is on the same day...how many seconds?
-      $diff = ($dateTo->getTimestamp() - $dateFrom->getTimestamp());
-      if($inclusive) $diff += 1;
+      $diff = $this->dateIntervalSeconds( $dateTo->diff($dateFrom) );
+      if($inclusive) $diff++;
 
       // If we're counting weekdays, does it even matter?
       if($weekdaysOnly && !in_array(date('N', $dateTo->getTimestamp()), self::$_weekdays)) $diff = 0;
     }else{ 
       $dateFromBoundary = new DateTime($this->formatDate('Y-m-d 23:59:59', $dateFrom));
       $dateToBoundary = new DateTime($this->formatDate('Y-m-d 00:00:00', $dateTo));
-
       $midRangeStart = new DateTime($this->formatDate('Y-m-d 00:00:00', $dateFrom));
       $midRangeStart->modify('+1 day');
-
       $midRangeEnd = new DateTime($this->formatDate('Y-m-d 23:59:59', $dateToBoundary));
       $midRangeEnd->modify('-1 day');
 
-      if($midRangeEnd->getTimestamp() - $dateTo->getTimestamp() <= 0){
+      if( $midRangeEnd->getTimestamp() - $midRangeStart->getTimestamp() <= 0){
         // We're only accross < 48 hours, no iterative lifting needed!
         $diffOne = $this->abstractTimeBetween($dateFrom, $dateFromBoundary, 's', $weekdaysOnly, true);
         $diffTwo = $this->abstractTimebetween($midRangeStart, $dateTo, 's', $weekdaysOnly, false);
         $diff = $diffOne + $diffTwo;
       }else{
         $diffStart = $this->abstractTimebetween($dateFrom, $dateFromBoundary, 's', $weekdaysOnly, true);
-
-        echo "Go between " . $this->formatDate('Y-m-d H:i:s', $dateToBoundary) . ' to ' . $this->formatDate('Y-m-d H:i:s', $dateTo) . "<br>\n";
-        $diffEnd = $this->abstractTimebetween($dateToBoundary, $dateTo, 's', $weekdaysOnly);
+        $diffEnd = $this->abstractTimebetween($dateToBoundary, $dateTo, 's', $weekdaysOnly, false);
 
         $interval = new DateInterval('P1D');  
-        $period = new DatePeriod($midRangeStart, $interval, $dateToBoundary);
+        $period = new DatePeriod($midRangeStart, $interval, $midRangeEnd);
         $diffMid = 0;
         foreach($period as $date){
           if(!$weekdaysOnly || in_array(date('N', $date->getTimestamp()), self::$_weekdays) )
             $diffMid += 60 * 60 * 24;
         }
-
         $diff = $diffStart + $diffMid + $diffEnd ;
       }
     }
     
     return (int) $this->formatDifference($diff, $resultAs);
   }
-
  /**
   * Set the timezones used for operations.
   */
@@ -215,21 +189,18 @@ class DateChallenge {
     $this->_timezoneFrom = ($_tzFrom) ? new DateTimeZone($_tzFrom) : new DateTimeZone( 'GMT' );
     $this->_timezoneTo = ($_tzTo) ? new DateTimeZone($_tzTo) : new DateTimeZone( ($_tzFrom) ? $_tzFrom : 'GMT' );
   }
-
  /**
   * Helper method to validate that a given parameter is a DateTime object.
   */
   protected function is_datetime_object($var){
     return gettype($var)=='object' && get_class($var) == 'DateTime';
   }
-
  /**
   * Helper method to validate the a given parameter is a valid result format string
   */
   protected function is_valid_datechallenge_format($var){
     return in_array($var, $this->_resultFormatNames);
   }
-
  /**
   * Helper method to bulk validate arguments using internal functions
   */
@@ -240,7 +211,6 @@ class DateChallenge {
       }
     }
   }
-
   /**
   * Format the time value (given as seconds) as one of our accepted formats
   */
@@ -248,14 +218,20 @@ class DateChallenge {
     // Calculate the value of this DateInterval as a total number of seconds
     $calculation = str_replace('$i', $diffValue, self::$_resultFormats[$format]['calculate']);
     eval('$diff = floor(' . $calculation .');');
-
     return $diff;
   }
-
   /**
   *
   */
   protected function formatDate($str, $dateTime){
     return date($str, $dateTime->getTimestamp());
+  }
+
+  protected function dateIntervalSeconds($dateInterval){
+    $hourSeconds = $dateInterval->h * 60 * 60;
+    $minuteSeconds = $dateInterval->i * 60;
+
+    return $dateInterval->s + $minuteSeconds + $hourSeconds;
+    
   }
 }
