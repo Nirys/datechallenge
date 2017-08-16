@@ -75,7 +75,7 @@ class DateChallenge {
   */  
   public static function daysBetween($dateFrom, $dateTo, $resultAs = 'd'){
     $self = self::getInstance(); 
-    return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs);
+    return $self->abstractTimeBetweenWrapper($dateFrom, $dateTo, $resultAs);
   }
  /**
   * Calculates the number of business days (Mon - Fri) between $dateFrom and $dateTo
@@ -95,7 +95,7 @@ class DateChallenge {
   */  
   public static function weekdaysBetween($dateFrom, $dateTo, $resultAs = 'd'){
     $self = self::getInstance(); 
-    return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs, true);
+    return $self->abstractTimeBetweenWrapper($dateFrom, $dateTo, $resultAs, true);
   }
  /**
   * Calculates the number of whole weeks between $dateFrom and $dateTo
@@ -115,7 +115,7 @@ class DateChallenge {
   */  
   public static function weeksBetween($dateFrom, $dateTo, $resultAs = 'w'){
     $self = self::getInstance(); 
-    return $self->abstractTimeBetween($dateFrom, $dateTo, $resultAs);
+    return $self->abstractTimeBetweenWrapper($dateFrom, $dateTo, $resultAs);
   }
  /**
   * Constructor.  Generally I assume people won't create an instance of DateChallenge
@@ -132,7 +132,21 @@ class DateChallenge {
     $this->setInstanceTimezones($_tzFrom, $_tzTo);
   }
 
+  protected function abstractTimeBetweenWrapper($dateFrom, $dateTo, $resultAs = 'd', $weekdaysOnly = false){
+    $this->validateArguments([
+      '$dateFrom' => ['typeExpected' => 'DateTime', 'value' => $dateFrom, 'function' => 'is_datetime_object'], 
+      '$dateTo' => ['typeExpected' => 'DateTime', 'value' => $dateTo, 'function' => 'is_datetime_object'],
+      '$resultAs' => ['typeExpected'=> 'DateChallenge Result Type', 'value' => $resultAs, 'function' => 'is_valid_datechallenge_format']
+    ]);
 
+    $UTCDateFrom = new DateTime($dateFrom->format('Y-m-d H:i:s'), $this->_timezoneFrom);
+    $UTCDateFrom->setTimezone(new DateTimeZone('UTC'));
+
+    $UTCDateTo = new DateTime($dateTo->format('Y-m-d H:i:s'), $this->_timezoneTo);
+    $UTCDateTo->setTimezone(new DateTimeZone('UTC'));
+    
+    return $this->abstractTimeBetween($UTCDateFrom, $UTCDateTo, $resultAs, $weekdaysOnly);
+  }
 
  /**
   *

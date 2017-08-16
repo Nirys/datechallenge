@@ -41,10 +41,11 @@ class DateChallengeTest extends TestCase{
 
     public function testCanAccountForTimezones(){
       DateChallenge::setTimezones('Australia/Adelaide', 'Australia/Melbourne');
-      $this->assertEquals(0, DateChallenge::daysBetween(new DateTime('2017-01-01 10:00'), new DateTime('2018-01-01 10:30')));
+      $this->assertEquals(0, DateChallenge::daysBetween(new DateTime('2017-01-01 10:00'), new DateTime('2017-01-01 10:30')));
     }
 
     public function testCanCalculateValidDaysBetweenLargerRange(){
+      DateChallenge::setTimezones('Australia/Adelaide','Australia/Adelaide');
       $this->assertEquals('4', DateChallenge::daysBetween(new DateTime('2018-01-01 10:00:00'), new DateTime('2018-01-05 10:00:00')) );
     }
 
@@ -59,6 +60,7 @@ class DateChallengeTest extends TestCase{
     }
 
     public function testCannotUseInvalidDateArguments(){
+      DateChallenge::setTimezones('Australia/Adelaide','Australia/Adelaide');
       $this->expectException( Exception::class );
       DateChallenge::daysBetween('foo', 'bar');
     }
