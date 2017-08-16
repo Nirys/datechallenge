@@ -43,7 +43,7 @@ class DateChallengeResult {
 
   public function runWeekdaysBetween(){
     DateChallenge::setTimezones($this->tzFrom, $this->tzTo);
-    $this->weekdays = DateChallenge::daysBetween($this->getFromDate(), $this->getToDate(), $this->weekdaysResultsFmt);
+    $this->weekdays = DateChallenge::weekdaysBetween($this->getFromDate(), $this->getToDate(), $this->weekdaysResultsFmt);
   }
 
   public function runWeeksBetween(){
